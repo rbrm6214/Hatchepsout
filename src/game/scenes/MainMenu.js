@@ -235,7 +235,11 @@ export class MainMenu extends Phaser.Scene
         const bonusSlides = [
             { key: 'bonus-scarabees-party', title: 'Scarabées Party', fileName: 'scarabéesParty.jpeg' },
             { key: 'bonus-vero-croft', title: 'Vero Croft', fileName: 'VeroCroft.jpeg' },
-            { key: 'bonus-puzzle-oracle', title: 'Puzzle Oracle', fileName: 'puzzleOracle.png' }
+            { key: 'bonus-puzzle-oracle', title: 'Puzzle Oracle', fileName: 'puzzleOracle.png' },
+            { key: 'bonus-bd-intro-page-1', title: 'BD Intro - Page 1', fileName: 'BD_intro_page1.png' },
+            { key: 'bonus-bd-intro-page-2', title: 'BD Intro - Page 2', fileName: 'BD_intro_page2.png' },
+            { key: 'bonus-surprise-comics-v1', title: 'Surprise Comics v1', fileName: 'Surprise_comics_version_1.png' },
+            { key: 'bonus-surprise-realiste-v1', title: 'Surprise Réaliste v1', fileName: 'Surprise_realiste_version_1.png' }
         ].filter(item => this.textures.exists(item.key));
 
         if (bonusSlides.length === 0)

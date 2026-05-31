@@ -18,6 +18,10 @@ import horusImg from '../../Murs/horus.png';
 import bonusScarabesPartyImg from '../../bonus/scarabéesParty.jpeg';
 import bonusVeroCroftImg from '../../bonus/VeroCroft.jpeg';
 import bonusPuzzleOracleImg from '../../bonus/puzzleOracle.png';
+import bonusBdIntroPage1Img from '../../bonus/BD_intro_page1.png';
+import bonusBdIntroPage2Img from '../../bonus/BD_intro_page2.png';
+import bonusSurpriseComicsV1Img from '../../bonus/Surprise_comics_version_1.png';
+import bonusSurpriseRealisteV1Img from '../../bonus/Surprise_realiste_version_1.png';
 
 export class Preloader extends Scene
 {
@@ -71,6 +75,10 @@ export class Preloader extends Scene
         this.load.image('bonus-scarabees-party', bonusScarabesPartyImg);
         this.load.image('bonus-vero-croft', bonusVeroCroftImg);
         this.load.image('bonus-puzzle-oracle', bonusPuzzleOracleImg);
+        this.load.image('bonus-bd-intro-page-1', bonusBdIntroPage1Img);
+        this.load.image('bonus-bd-intro-page-2', bonusBdIntroPage2Img);
+        this.load.image('bonus-surprise-comics-v1', bonusSurpriseComicsV1Img);
+        this.load.image('bonus-surprise-realiste-v1', bonusSurpriseRealisteV1Img);
     }
 
     create ()
