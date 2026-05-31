@@ -130,7 +130,7 @@ export class Game extends Phaser.Scene
         this.countdownEvent = null;
         this.hasTriggeredGameOver = false;
         this.helpUsageCount = 0;
-        this.difficulty = DIFFICULTY.NORMAL;
+        this.difficulty = DIFFICULTY.HARD;
         this.showHints = true;
         this.duskStonePlacedOnDial = false;
         this.duskStoneCharged = false;
@@ -183,7 +183,7 @@ export class Game extends Phaser.Scene
         // Scene instances are reused between runs, so gameplay state must be reset on each start.
         this.resetRuntimeState();
 
-        const configured = data?.difficulty ?? this.registry.get('difficulty') ?? DIFFICULTY.NORMAL;
+        const configured = data?.difficulty ?? this.registry.get('difficulty') ?? DIFFICULTY.HARD;
         this.difficulty = normalizeDifficulty(configured);
         this.timeRemainingSeconds = this.getInitialTimeSecondsByDifficulty();
         this.showHints = true;
@@ -3035,7 +3035,7 @@ Moloch le Phénicien`);
             ankh: '☥', amulette: '◇', scarabee: '🪲', djed: '𓊽', uraeus: '🐍',
             lotus: '✿', sceptre: '⚚', plume: '🪶', couronne: '👑', masque: '🎭'
         };
-        const available = [...this.phase2SphinxOrder];
+        const available = this.shuffleArray([...this.phase2SphinxOrder]);
         const chosen = [];
 
         const lineText = addNode(this.add.text(w / 2, h / 2 - 176, 'Choix: ', {

@@ -17,6 +17,7 @@ export function normalizeDifficulty (value)
 export function getStoredDifficulty ()
 {
     const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw === null) return DIFFICULTY.HARD;
     return normalizeDifficulty(raw);
 }
 
