@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualiseur Hotspots Papyrus</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #2a2a2a;
+            color: #fff;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .canvas-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 0 auto;
+            border: 3px solid #b48e58;
+            background: #1f140c;
+            padding: 10px;
+        }
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+        .hotspots-list {
+            margin-top: 30px;
+            background: #1f140c;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .hotspot-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #2a2a2a;
+            border-left: 4px solid #b48e58;
+            border-radius: 3px;
+        }
+        .hotspot-label {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #d4a574;
+            margin-bottom: 5px;
+        }
+        .hotspot-coords {
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        .legend {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        .legend-item {
+            margin: 5px 0;
+        }
+        .color-box {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            vertical-align: middle;
+            border: 1px solid #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏺 Visualiseur Hotspots - Mur Nord Papyrus</h1>
+        
+        <div style="text-align: center;">
+            <div class="canvas-wrapper">
+                <canvas id="canvas"></canvas>
+            </div>
+        </div>
+
+        <div class="hotspots-list">
+            <h2>Zones Interactives Détaillées:</h2>
+            <div id="hotspots-details"></div>
+        </div>
+
+        <div class="legend">
+            <h3>Légende des Couleurs:</h3>
+            <div class="legend-item">
+                <span class="color-box" style="background: rgba(255, 100, 100, 0.5);"></span>
+                Scarabee (🪲)
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background: rgba(100, 200, 100, 0.5);"></span>
+                Masques (🎭)
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background: rgba(100, 150, 255, 0.5);"></span>
+                Serpents Uraeus (🐍)
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background: rgba(255, 200, 100, 0.5);"></span>
+                Sceptre (⚚)
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background: rgba(200, 100, 200, 0.5);"></span>
+                Djed (𓊽)
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background: rgba(255, 140, 200, 0.5);"></span>
+                Lotus (✿)
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background: rgba(244, 222, 122, 0.5);"></span>
+                Couronne (👑)
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background: rgba(122, 217, 217, 0.5);"></span>
+                Plume (🪶)
+            </div>
+            <div class="legend-item">
+                <span class="color-box" style="background: rgba(217, 217, 217, 0.5);"></span>
+                Cle Ankh (☥)
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Donnees des hotspots
+        const hotspots = [
+            // Scarabee
+            { label: 'Scarabee (🪲)', x: 282, y: 285, w: 14, h: 14, color: 'rgba(255, 100, 100, 0.5)', borderColor: '#ff6464' },
+            
+            // Masques (3)
+            { label: 'Masque 1 (🎭)', x: 295, y: 446, w: 15, h: 20, color: 'rgba(100, 200, 100, 0.5)', borderColor: '#64c864' },
+            { label: 'Masque 2 (🎭)', x: 310, y: 446, w: 15, h: 20, color: 'rgba(100, 200, 100, 0.5)', borderColor: '#64c864' },
+            { label: 'Masque 3 (🎭)', x: 325, y: 446, w: 15, h: 20, color: 'rgba(100, 200, 100, 0.5)', borderColor: '#64c864' },
+            
+            // Serpents (2)
+            { label: 'Serpent Uraeus 1 (🐍)', x: 303, y: 401, w: 30, h: 30, color: 'rgba(100, 150, 255, 0.5)', borderColor: '#6496ff' },
+            { label: 'Serpent Uraeus 2 (🐍)', x: 323, y: 401, w: 30, h: 30, color: 'rgba(100, 150, 255, 0.5)', borderColor: '#6496ff' },
+            
+            // Sceptre
+            { label: 'Sceptre (⚚)', x: 443, y: 438, w: 25, h: 200, color: 'rgba(255, 200, 100, 0.5)', borderColor: '#ffc864' },
+            
+            // Djed (2)
+            { label: 'Djed 1 (𓊽)', x: 565, y: 532, w: 25, h: 80, color: 'rgba(200, 100, 200, 0.5)', borderColor: '#c864c8' },
+            { label: 'Djed 2 (𓊽)', x: 615, y: 536, w: 25, h: 80, color: 'rgba(200, 100, 200, 0.5)', borderColor: '#c864c8' },
+
+            // Lotus (3)
+            { label: 'Lotus 1 (✿)', x: 173, y: 316, w: 15, h: 15, color: 'rgba(255, 140, 200, 0.5)', borderColor: '#ff8cc8' },
+            { label: 'Lotus 2 (✿)', x: 563, y: 473, w: 15, h: 15, color: 'rgba(255, 140, 200, 0.5)', borderColor: '#ff8cc8' },
+            { label: 'Lotus 3 (✿)', x: 611, y: 473, w: 15, h: 15, color: 'rgba(255, 140, 200, 0.5)', borderColor: '#ff8cc8' },
+
+            // Couronne (1)
+            { label: 'Couronne (👑)', x: 473, y: 291, w: 25, h: 50, color: 'rgba(244, 222, 122, 0.5)', borderColor: '#f4de7a' },
+
+            // Plumes (3)
+            { label: 'Plume 1 (🪶)', x: 560, y: 288, w: 30, h: 30, color: 'rgba(122, 217, 217, 0.5)', borderColor: '#7ad9d9' },
+            { label: 'Plume 2 (🪶)', x: 570, y: 314, w: 30, h: 30, color: 'rgba(122, 217, 217, 0.5)', borderColor: '#7ad9d9' },
+            { label: 'Plume 3 (🪶)', x: 580, y: 300, w: 30, h: 30, color: 'rgba(122, 217, 217, 0.5)', borderColor: '#7ad9d9' },
+
+            // Cle Ankh (relative au 3e lotus: +25 en X, -30 en Y)
+            { label: 'Cle Ankh (☥)', x: 635, y: 445, w: 25, h: 25, color: 'rgba(217, 217, 217, 0.5)', borderColor: '#d9d9d9' }
+        ];
+
+        // Dimensions de l'image
+        const imgWidth = 760;
+        const imgHeight = 430;
+
+        // Initialiser le canvas
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = imgWidth;
+        canvas.height = imgHeight;
+
+        // Charger l'image papyrus
+        const img = new Image();
+        img.src = './assets/Papyrus.png';
+        
+        img.onload = () => {
+            // Dessiner l'image
+            ctx.drawImage(img, 0, 0, imgWidth, imgHeight);
+            drawHotspots();
+        };
+
+        img.onerror = () => {
+            // Si l'image ne charge pas, afficher un fond gris et les zones quand même
+            ctx.fillStyle = '#4a4a4a';
+            ctx.fillRect(0, 0, imgWidth, imgHeight);
+            ctx.fillStyle = '#999';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('(Image papyrus non disponible)', imgWidth / 2, imgHeight / 2);
+            drawHotspots();
+        };
+
+        function drawHotspots() {
+            // Dessiner les hotspots
+            hotspots.forEach(spot => {
+                // Calculer la position dans le canvas (compte tenu du centre de l'image)
+                const left = spot.x - spot.w / 2;
+                const top = spot.y - spot.h / 2;
+                
+                // Dessiner le rectangle
+                ctx.fillStyle = spot.color;
+                ctx.fillRect(left, top, spot.w, spot.h);
+                
+                // Dessiner la bordure
+                ctx.strokeStyle = spot.borderColor;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(left, top, spot.w, spot.h);
+                
+                // Dessiner le texte
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`(${spot.x}, ${spot.y})`, spot.x, spot.y - spot.h / 2 - 15);
+                ctx.fillText(`${spot.w}x${spot.h}`, spot.x, spot.y);
+            });
+        }
+
+        // Remplir la liste des hotspots
+        const hotspotsList = document.getElementById('hotspots-details');
+        hotspots.forEach(spot => {
+            const div = document.createElement('div');
+            div.className = 'hotspot-item';
+            div.innerHTML = `
+                <div class="hotspot-label">${spot.label}</div>
+                <div class="hotspot-coords">
+                    Position: (${spot.x}, ${spot.y})<br>
+                    Dimension: ${spot.w}×${spot.h}px<br>
+                    Zone: [${(spot.x - spot.w/2).toFixed(0)} à ${(spot.x + spot.w/2).toFixed(0)}, ${(spot.y - spot.h/2).toFixed(0)} à ${(spot.y + spot.h/2).toFixed(0)}]
+                </div>
+            `;
+            hotspotsList.appendChild(div);
+        });
+    </script>
+</body>
+</html>
