@@ -30,6 +30,13 @@ export class MainMenu extends Phaser.Scene
 
     create ()
     {
+        // The scene instance can be reused; clear stale node references before rebuilding UI.
+        this.optionsWindowNodes = [];
+        this.passwordWindowNodes = [];
+        this.choiceWindowNodes = [];
+        this.bonusWindowNodes = [];
+        this.bonusButtonNodes = [];
+
         const width = this.scale.width;
         const height = this.scale.height;
         const difficulty = getStoredDifficulty();
@@ -80,6 +87,8 @@ export class MainMenu extends Phaser.Scene
             color: '#e5d6b2',
             align: 'center'
         }).setDepth(20).setOrigin(0.5);
+
+        this.difficultyText.setY(height - 20);
 
         this.add.text(width / 2, height - 38, ' ', {
             fontFamily: 'Arial',
@@ -223,6 +232,29 @@ export class MainMenu extends Phaser.Scene
 
         const width = this.scale.width;
         const height = this.scale.height;
+        const bonusSlides = [
+            { key: 'bonus-scarabees-party', title: 'Scarabées Party', fileName: 'scarabéesParty.jpeg' },
+            { key: 'bonus-vero-croft', title: 'Vero Croft', fileName: 'VeroCroft.jpeg' },
+            { key: 'bonus-puzzle-oracle', title: 'Puzzle Oracle', fileName: 'puzzleOracle.png' }
+        ].filter(item => this.textures.exists(item.key));
+
+        if (bonusSlides.length === 0)
+        {
+            this.bonusWindowNodes = [
+                this.add.text(width / 2, height / 2, 'Aucune image Bonus chargée.', {
+                    fontFamily: 'Georgia',
+                    fontSize: 30,
+                    color: '#f5e4be'
+                }).setOrigin(0.5).setDepth(50)
+            ];
+            this.time.delayedCall(1800, () => {
+                this.bonusWindowNodes.forEach(n => n.destroy());
+                this.bonusWindowNodes = [];
+            });
+            return;
+        }
+
+        let currentIndex = 0;
         const nodes = [];
         const addNode = (obj) => {
             nodes.push(obj);
@@ -234,35 +266,112 @@ export class MainMenu extends Phaser.Scene
             this.bonusWindowNodes = [];
         };
 
-        addNode(this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.55)
+        addNode(this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.72)
             .setDepth(40)
             .setInteractive());
 
-        addNode(this.add.rectangle(width / 2, height / 2, 760, 340, 0x26190f, 0.96)
+        addNode(this.add.rectangle(width / 2, height / 2, width - 80, height - 90, 0x26190f, 0.96)
             .setStrokeStyle(3, 0xd7b574)
             .setDepth(41));
 
-        addNode(this.add.text(width / 2, height / 2 - 90, 'SECTION BONUS DÉBLOQUÉE', {
+        addNode(this.add.text(width / 2, 72, 'VISUALISEUR BONUS', {
             fontFamily: 'Georgia',
-            fontSize: 40,
+            fontSize: 42,
             color: '#f3d8a0',
             align: 'center'
         }).setOrigin(0.5).setDepth(42));
 
-        addNode(this.add.text(width / 2, height / 2 - 8,
-            'Le Bonus est maintenant visible depuis le menu titre.', {
-                fontFamily: 'Georgia',
-                fontSize: 23,
-                color: '#ead8b0',
-                align: 'center'
-            }).setOrigin(0.5).setDepth(42));
+        const slideTitle = addNode(this.add.text(width / 2, 118, '', {
+            fontFamily: 'Georgia',
+            fontSize: 24,
+            color: '#ead8b0',
+            align: 'center'
+        }).setOrigin(0.5).setDepth(42));
 
-        const closeBg = addNode(this.add.rectangle(width / 2, height / 2 + 105, 230, 56, 0x2f2116, 0.95)
+        const slideCounter = addNode(this.add.text(width / 2, height - 82, '', {
+            fontFamily: 'Georgia',
+            fontSize: 20,
+            color: '#e7d1a5',
+            align: 'center'
+        }).setOrigin(0.5).setDepth(42));
+
+        const slideFileName = addNode(this.add.text(width / 2, height - 58, '', {
+            fontFamily: 'Georgia',
+            fontSize: 18,
+            color: '#d8be8d',
+            align: 'center'
+        }).setOrigin(0.5).setDepth(42));
+
+        const slideImage = addNode(this.add.image(width / 2, height / 2 + 8, bonusSlides[0].key)
+            .setDepth(42));
+
+        const refreshSlide = () => {
+            const current = bonusSlides[currentIndex];
+            slideImage.setTexture(current.key);
+            const tex = this.textures.get(current.key);
+            const src = tex?.getSourceImage?.();
+            const srcW = src?.width ?? 1;
+            const srcH = src?.height ?? 1;
+            const maxW = width - 250;
+            const maxH = height - 270;
+            const scale = Math.min(maxW / srcW, maxH / srcH);
+            slideImage.setDisplaySize(Math.round(srcW * scale), Math.round(srcH * scale));
+            slideTitle.setText(current.title);
+            slideCounter.setText((currentIndex + 1) + ' / ' + bonusSlides.length);
+            slideFileName.setText('Image: ' + current.fileName);
+        };
+        refreshSlide();
+
+        const leftBg = addNode(this.add.rectangle(88, height / 2, 76, 76, 0x2f2116, 0.95)
+            .setStrokeStyle(2, 0xd7b574)
+            .setDepth(42)
+            .setInteractive({ useHandCursor: true }));
+        const leftTxt = addNode(this.add.text(88, height / 2, '◀', {
+            fontFamily: 'Georgia',
+            fontSize: 40,
+            color: '#f5e4be'
+        }).setOrigin(0.5).setDepth(43));
+        leftBg.on('pointerdown', () => {
+            currentIndex = (currentIndex - 1 + bonusSlides.length) % bonusSlides.length;
+            refreshSlide();
+        });
+        leftBg.on('pointerover', () => {
+            leftBg.setFillStyle(0x4a3522, 0.95);
+            leftTxt.setColor('#fff3d0');
+        });
+        leftBg.on('pointerout', () => {
+            leftBg.setFillStyle(0x2f2116, 0.95);
+            leftTxt.setColor('#f5e4be');
+        });
+
+        const rightBg = addNode(this.add.rectangle(width - 88, height / 2, 76, 76, 0x2f2116, 0.95)
+            .setStrokeStyle(2, 0xd7b574)
+            .setDepth(42)
+            .setInteractive({ useHandCursor: true }));
+        const rightTxt = addNode(this.add.text(width - 88, height / 2, '▶', {
+            fontFamily: 'Georgia',
+            fontSize: 40,
+            color: '#f5e4be'
+        }).setOrigin(0.5).setDepth(43));
+        rightBg.on('pointerdown', () => {
+            currentIndex = (currentIndex + 1) % bonusSlides.length;
+            refreshSlide();
+        });
+        rightBg.on('pointerover', () => {
+            rightBg.setFillStyle(0x4a3522, 0.95);
+            rightTxt.setColor('#fff3d0');
+        });
+        rightBg.on('pointerout', () => {
+            rightBg.setFillStyle(0x2f2116, 0.95);
+            rightTxt.setColor('#f5e4be');
+        });
+
+        const closeBg = addNode(this.add.rectangle(width / 2, height - 38, 230, 56, 0x2f2116, 0.95)
             .setStrokeStyle(2, 0xd7b574)
             .setDepth(42)
             .setInteractive({ useHandCursor: true }));
 
-        const closeTxt = addNode(this.add.text(width / 2, height / 2 + 105, 'Fermer', {
+        const closeTxt = addNode(this.add.text(width / 2, height - 38, 'Fermer', {
             fontFamily: 'Georgia',
             fontSize: 30,
             color: '#f5e4be'

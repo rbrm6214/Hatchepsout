@@ -15,6 +15,9 @@ import yuImg from '../../images/Yu.png';
 import papyrusImg from '../../Murs/Papyrus.png';
 import puzzleOracleImg from '../../Murs/puzzleOracle.png';
 import horusImg from '../../Murs/horus.png';
+import bonusScarabesPartyImg from '../../bonus/scarabéesParty.jpeg';
+import bonusVeroCroftImg from '../../bonus/VeroCroft.jpeg';
+import bonusPuzzleOracleImg from '../../bonus/puzzleOracle.png';
 
 export class Preloader extends Scene
 {
@@ -65,6 +68,9 @@ export class Preloader extends Scene
         this.load.image('papyrus-wall', papyrusImg);
         this.load.image('oracle-vision', puzzleOracleImg);
         this.load.image('oracle-horus', horusImg);
+        this.load.image('bonus-scarabees-party', bonusScarabesPartyImg);
+        this.load.image('bonus-vero-croft', bonusVeroCroftImg);
+        this.load.image('bonus-puzzle-oracle', bonusPuzzleOracleImg);
     }
 
     create ()

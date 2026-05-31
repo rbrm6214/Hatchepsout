@@ -52,6 +52,7 @@ export class Game extends Phaser.Scene
     timeRemainingSeconds;
     countdownEvent;
     hasTriggeredGameOver;
+    helpUsageCount;
     difficulty;
     showHints;
     duskStonePlacedOnDial;
@@ -128,6 +129,7 @@ export class Game extends Phaser.Scene
         this.timeRemainingSeconds = 60 * 60;
         this.countdownEvent = null;
         this.hasTriggeredGameOver = false;
+        this.helpUsageCount = 0;
         this.difficulty = DIFFICULTY.NORMAL;
         this.showHints = true;
         this.duskStonePlacedOnDial = false;
@@ -257,7 +259,12 @@ export class Game extends Phaser.Scene
             this.playSfx('victory');
             this.stopCountdown();
             this.stopGameMusic();
-            this.scene.start('GameOver', { outcome: 'success', timeRemainingSeconds: this.timeRemainingSeconds });
+            this.scene.start('GameOver', {
+                outcome: 'success',
+                timeRemainingSeconds: this.timeRemainingSeconds,
+                difficulty: this.difficulty,
+                helpUsageCount: this.helpUsageCount
+            });
         });
         this.exitButton.on('pointerover', () => {
             this.exitButton.setFillStyle(0x4a5731, 0.95);
@@ -350,7 +357,12 @@ export class Game extends Phaser.Scene
         this.hasTriggeredGameOver = true;
         this.stopCountdown();
         this.stopGameMusic();
-        this.scene.start('GameOver', { outcome: 'collapse', timeRemainingSeconds: this.timeRemainingSeconds });
+        this.scene.start('GameOver', {
+            outcome: 'collapse',
+            timeRemainingSeconds: this.timeRemainingSeconds,
+            difficulty: this.difficulty,
+            helpUsageCount: this.helpUsageCount
+        });
     }
 
     playTone (frequency, duration = 0.2, type = 'sine', volume = 0.035)
@@ -2016,7 +2028,12 @@ Moloch le Phénicien`);
             {
                 this.stopCountdown();
                 this.stopGameMusic();
-                this.scene.start('GameOver', { outcome: 'success', timeRemainingSeconds: this.timeRemainingSeconds });
+                this.scene.start('GameOver', {
+                    outcome: 'success',
+                    timeRemainingSeconds: this.timeRemainingSeconds,
+                    difficulty: this.difficulty,
+                    helpUsageCount: this.helpUsageCount
+                });
                 return;
             }
             if (this.phase2PortalActivated)
@@ -3674,6 +3691,7 @@ Moloch le Phénicien`);
     {
         if (this.hasTriggeredGameOver) return false;
 
+        this.helpUsageCount += 1;
         const helpCostSeconds = this.getPaidHelpCostMinutes() * 60;
         this.timeRemainingSeconds = Math.max(0, this.timeRemainingSeconds - helpCostSeconds);
         this.updateTimerText();
@@ -3756,9 +3774,7 @@ Moloch le Phénicien`);
 
         if (this.currentRoom === 'nord2')
         {
-            const remaining = this.getPhase2NordRemainingCount();
-            if (remaining <= 0) return 'Le mur papyrus est entièrement résolu.';
-            return 'Inspecte les zones décoratives du mur: il reste ' + remaining + ' reliques cachées à trouver.';
+            return 'Si tu ne trouve pas, passe la souris a tes enfants, ils cliqueront n\'importe ou et tu les auras tous ^^';
         }
 
         if (this.currentRoom === 'sud2')
