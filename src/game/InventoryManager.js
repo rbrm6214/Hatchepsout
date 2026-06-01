@@ -1,4 +1,4 @@
-﻿export class InventoryManager
+export class InventoryManager
 {
     constructor (scene)
     {
@@ -11,14 +11,20 @@
         this._slotBgs = [];
         this._slotIcons = [];
         this._itemPopupNodes = [];
+        this._slotStartX = 154;
+        this._slotGap = 62;
+        this._slotBarY = 748;
+        this._dragCandidate = null;
+        this._dragState = null;
         this._createHUD();
+        this._bindDragHandlers();
     }
 
     _createHUD ()
     {
         const scene = this.scene;
         const w = scene.scale.width;
-        const barY = 748;
+        const barY = this._slotBarY;
 
         // Background bar
         scene.add.rectangle(w / 2, barY, w - 60, 38, 0x0c0906, 0.93)
@@ -32,8 +38,8 @@
             color: '#c4913e'
         }).setOrigin(0.5).setDepth(201).setScrollFactor(0);
 
-        const startX = 154;
-        const gap = 62;
+        const startX = this._slotStartX;
+        const gap = this._slotGap;
 
         for (let i = 0; i < this.maxSlots; i++)
         {
@@ -53,14 +59,19 @@
 
             const idx = i;
 
-            bg.on('pointerdown', () => this._selectSlot(idx));
+            bg.on('pointerdown', pointer => this._onSlotPointerDown(pointer, idx));
             bg.on('pointerover', () => {
+                if (this._dragState?.active) return;
                 if (this.items[idx]) bg.setFillStyle(0x2a1b0a, 0.98);
             });
             bg.on('pointerout', () => {
+                if (this._dragState?.active) return;
                 const selected = this.items[idx]?.key === this.selectedKey;
                 bg.setFillStyle(selected ? 0x362008 : 0x1c1209, 0.95);
             });
+
+            icon.setInteractive({ useHandCursor: true });
+            icon.on('pointerdown', pointer => this._onSlotPointerDown(pointer, idx));
 
             this._slotBgs.push(bg);
             this._slotIcons.push(icon);
@@ -87,6 +98,233 @@
         helpTrigger.on('pointerover', () => helpTrigger.setColor('#ff4040'));
         helpTrigger.on('pointerout', () => helpTrigger.setColor('#d02828'));
         helpTrigger.on('pointerdown', () => this._handlePaidHelpClick());
+    }
+
+    _bindDragHandlers ()
+    {
+        const input = this.scene.input;
+        input.on('pointermove', pointer => this._onGlobalPointerMove(pointer));
+        input.on('pointerup', pointer => this._onGlobalPointerUp(pointer));
+        input.on('pointerupoutside', pointer => this._onGlobalPointerUp(pointer));
+    }
+
+    _isSamePointer (pointer, pointerId)
+    {
+        if (pointerId === undefined || pointerId === null) return true;
+        if (!pointer || pointer.id === undefined || pointer.id === null) return true;
+        return pointer.id === pointerId;
+    }
+
+    _onSlotPointerDown (pointer, idx)
+    {
+        if (!this.items[idx]) return;
+
+        this._dragCandidate = {
+            index: idx,
+            pointerId: pointer.id,
+            startX: pointer.x,
+            startY: pointer.y
+        };
+    }
+
+    _onGlobalPointerMove (pointer)
+    {
+        if (this._dragState?.active)
+        {
+            if (!this._isSamePointer(pointer, this._dragState.pointerId)) return;
+            this._dragState.icon.setPosition(pointer.x, this._slotBarY);
+            this._updateDragInsertionPreview(pointer.x);
+            return;
+        }
+
+        if (!this._dragCandidate) return;
+        if (!this._isSamePointer(pointer, this._dragCandidate.pointerId)) return;
+
+        const dx = pointer.x - this._dragCandidate.startX;
+        const dy = pointer.y - this._dragCandidate.startY;
+        const movedEnough = Math.abs(dx) > 10 || Math.abs(dy) > 10;
+        if (!movedEnough) return;
+
+        const fromIndex = this._dragCandidate.index;
+        const item = this.items[fromIndex];
+        const icon = this._slotIcons[fromIndex];
+        if (!item || !icon) return;
+
+        this._dragState = {
+            active: true,
+            pointerId: pointer.id,
+            fromIndex,
+            insertIndex: fromIndex,
+            icon,
+            originalX: icon.x,
+            originalY: icon.y
+        };
+
+        this._dragCandidate = null;
+        icon.setDepth(260);
+        this._updateDragInsertionPreview(pointer.x);
+    }
+
+    _onGlobalPointerUp (pointer)
+    {
+        if (this._dragState?.active)
+        {
+            if (!this._isSamePointer(pointer, this._dragState.pointerId)) return;
+
+            // Re-evaluate target slot at release position to avoid stale preview index.
+            this._updateDragInsertionPreview(pointer.x);
+
+            const fromIndex = this._dragState.fromIndex;
+            const insertIndex = this._dragState.insertIndex;
+
+            this._dragState.icon.setDepth(202);
+
+            this._clearDragPreview();
+            this._dragState = null;
+
+            if (insertIndex !== fromIndex)
+            {
+                this._moveItem(fromIndex, insertIndex);
+                this._refreshSlots();
+                this.scene.playSfx?.('pickup');
+            }
+
+            this._animateIconsToSlotPositions();
+            return;
+        }
+
+        if (!this._dragCandidate) return;
+        if (!this._isSamePointer(pointer, this._dragCandidate.pointerId)) return;
+
+        const idx = this._dragCandidate.index;
+        this._dragCandidate = null;
+        this._selectSlot(idx);
+    }
+
+    _updateDragInsertionPreview (pointerX)
+    {
+        if (!this._dragState?.active) return;
+
+        const maxIndex = Math.max(0, this.items.length - 1);
+        const rawIndex = Math.round((pointerX - this._slotStartX) / this._slotGap);
+        const insertIndex = Math.max(0, Math.min(rawIndex, maxIndex));
+        this._dragState.insertIndex = insertIndex;
+
+        this._animateDragProjection();
+
+        this._slotBgs.forEach((bg, i) => {
+            const hasItem = !!this.items[i];
+            const selected = hasItem && this.items[i].key === this.selectedKey;
+            let fill = selected ? 0x362008 : 0x1c1209;
+            let alpha = 0.95;
+
+            if (hasItem && i === insertIndex)
+            {
+                fill = 0x4a2f10;
+                alpha = 1;
+            }
+
+            if (i === this._dragState.fromIndex)
+            {
+                fill = 0x23170c;
+                alpha = 0.7;
+            }
+
+            bg.setFillStyle(fill, alpha);
+        });
+    }
+
+    _slotXForIndex (index)
+    {
+        return this._slotStartX + index * this._slotGap;
+    }
+
+    _projectedIndexForDrag (slotIndex, fromIndex, insertIndex)
+    {
+        if (slotIndex === fromIndex) return insertIndex;
+
+        if (insertIndex > fromIndex)
+        {
+            if (slotIndex > fromIndex && slotIndex <= insertIndex) return slotIndex - 1;
+            return slotIndex;
+        }
+
+        if (insertIndex < fromIndex)
+        {
+            if (slotIndex >= insertIndex && slotIndex < fromIndex) return slotIndex + 1;
+            return slotIndex;
+        }
+
+        return slotIndex;
+    }
+
+    _animateDragProjection ()
+    {
+        if (!this._dragState?.active) return;
+
+        const fromIndex = this._dragState.fromIndex;
+        const insertIndex = this._dragState.insertIndex;
+
+        for (let i = 0; i < this.items.length; i++)
+        {
+            if (i === fromIndex) continue;
+            const icon = this._slotIcons[i];
+            if (!icon) continue;
+
+            const projected = this._projectedIndexForDrag(i, fromIndex, insertIndex);
+            const targetX = this._slotXForIndex(projected);
+            if (Math.abs(icon.x - targetX) < 1) continue;
+
+            this.scene.tweens.killTweensOf(icon);
+            this.scene.tweens.add({
+                targets: icon,
+                x: targetX,
+                y: this._slotBarY,
+                duration: 85,
+                ease: 'Sine.easeOut'
+            });
+        }
+    }
+
+    _animateIconsToSlotPositions ()
+    {
+        this._slotIcons.forEach((icon, i) => {
+            if (!icon) return;
+            const targetX = this._slotXForIndex(i);
+            const targetY = this._slotBarY;
+            if (Math.abs(icon.x - targetX) < 1 && Math.abs(icon.y - targetY) < 1)
+            {
+                icon.setPosition(targetX, targetY);
+                return;
+            }
+
+            this.scene.tweens.killTweensOf(icon);
+            this.scene.tweens.add({
+                targets: icon,
+                x: targetX,
+                y: targetY,
+                duration: 120,
+                ease: 'Sine.easeOut'
+            });
+        });
+    }
+
+    _clearDragPreview ()
+    {
+        this._slotBgs.forEach((bg, i) => {
+            const selected = this.items[i]?.key === this.selectedKey;
+            bg.setFillStyle(selected ? 0x362008 : 0x1c1209, 0.95);
+        });
+    }
+
+    _moveItem (fromIndex, toIndex)
+    {
+        if (fromIndex === toIndex) return;
+        if (fromIndex < 0 || fromIndex >= this.items.length) return;
+        if (toIndex < 0 || toIndex >= this.items.length) return;
+
+        const [item] = this.items.splice(fromIndex, 1);
+        this.items.splice(toIndex, 0, item);
     }
 
     _handlePaidHelpClick ()

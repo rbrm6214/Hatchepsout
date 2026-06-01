@@ -96,6 +96,8 @@ export class Game extends Phaser.Scene
     phase2PortalActivated;
     phase2PortalReady;
     helpOverlayNodes;
+    debugWasUsed;
+    nordRelicDebugPrefillHandler;
 
     constructor ()
     {
@@ -173,6 +175,8 @@ export class Game extends Phaser.Scene
         this.phase2PortalReady = false;
         this.helpOverlayNodes = [];
         this.debugHotspots = false;
+        this.debugWasUsed = false;
+        this.nordRelicDebugPrefillHandler = null;
         this.phase2DebugZones = [];
         this.phase2NordClueText = null;
         this.phase2NordWallSolved = false;
@@ -214,12 +218,31 @@ export class Game extends Phaser.Scene
         // Toggle du mode debug avec la touche D
         this.input.keyboard.on('keydown-D', () => {
             this.debugHotspots = !this.debugHotspots;
+            if (this.debugHotspots)
+            {
+                this.debugWasUsed = true;
+            }
+
             if (this.currentRoom === 'nord2') {
                 this.clearPhase2DebugZones();
                 if (this.debugHotspots) {
                     this.drawPhase2PapyrusDebugZones();
                 }
             }
+
+            if (this.currentRoom === 'nord' && this.debugHotspots)
+            {
+                this.nordRelicDebugPrefillHandler?.();
+            }
+
+            if (this.sudWeightTexts.length > 0)
+            {
+                const canShowSouthWeights = this.difficulty === DIFFICULTY.EASY || this.puzzlesSolved.nord || this.debugHotspots;
+                this.sudWeightTexts.forEach(txt => {
+                    txt.setVisible(this.currentRoom === 'sud' && canShowSouthWeights);
+                });
+            }
+
             const msg = this.debugHotspots ? 'Mode DEBUG ACTIVÉ' : 'Mode DEBUG DÉSACTIVÉ';
             this.updateMessage(msg);
         });
@@ -263,7 +286,8 @@ export class Game extends Phaser.Scene
                 outcome: 'success',
                 timeRemainingSeconds: this.timeRemainingSeconds,
                 difficulty: this.difficulty,
-                helpUsageCount: this.helpUsageCount
+                helpUsageCount: this.helpUsageCount,
+                debugUsed: this.debugWasUsed
             });
         });
         this.exitButton.on('pointerover', () => {
@@ -361,7 +385,8 @@ export class Game extends Phaser.Scene
             outcome: 'collapse',
             timeRemainingSeconds: this.timeRemainingSeconds,
             difficulty: this.difficulty,
-            helpUsageCount: this.helpUsageCount
+            helpUsageCount: this.helpUsageCount,
+            debugUsed: this.debugWasUsed
         });
     }
 
@@ -714,7 +739,7 @@ export class Game extends Phaser.Scene
 
         if (this.sudWeightTexts.length > 0)
         {
-            const canShowSouthWeights = this.difficulty === DIFFICULTY.EASY || this.puzzlesSolved.nord;
+            const canShowSouthWeights = this.difficulty === DIFFICULTY.EASY || this.puzzlesSolved.nord || this.debugHotspots;
             this.sudWeightTexts.forEach(txt => {
                 txt.setVisible(key === 'sud' && canShowSouthWeights);
             });
@@ -1095,6 +1120,23 @@ export class Game extends Phaser.Scene
             this.updateMessage('Ce n\'est pas la bonne combinaison de valeurs.');
         };
 
+        const applyNordRelicsDebugPrefill = () => {
+            if (!this.debugHotspots || this.puzzlesSolved.nord) return;
+
+            artifactDefs.slice(0, 5).forEach(def => {
+                chosenValues.set(def.letter, def.value);
+                const node = rowNodes.get(def.letter);
+                if (!node) return;
+                node.fieldText.setText(String(def.value));
+                node.fieldBg.disableInteractive();
+                setRowStyle(node, 'good');
+            });
+
+            this.updateMessage('DEBUG: 5 premières valeurs remplies pour le calcul des reliques.');
+            evaluateEntries();
+        };
+        this.nordRelicDebugPrefillHandler = applyNordRelicsDebugPrefill;
+
         const openNumberMenu = (letter, x, y) => {
             if (this.puzzlesSolved.nord) return;
             closeNumberMenu();
@@ -1190,6 +1232,11 @@ export class Game extends Phaser.Scene
             this.r('nord', fieldBg);
             this.r('nord', fieldText);
         });
+
+        if (this.debugHotspots)
+        {
+            applyNordRelicsDebugPrefill();
+        }
 
         // Tablette collectible
         this.createCollectible('nord', w - 120, 220, 'cristal', 'Tablette du scribe Otis', '▭',
@@ -1881,8 +1928,8 @@ Râ le faucon
 Sokar l'emergence du soleil
 Yu le chinois
 Arès le sanglier
-Heru'ur est Horus l'Ancien le faucon
-Seth l'hybride (museau effilé et oreilles dressées mais tronquées)
+Heru'ur est Horus l'Ancien, le faucon
+Seth l'hybride
 Svarog le dragon ailé (Slave)
 Moloch le Phénicien`);
     }
@@ -2032,7 +2079,8 @@ Moloch le Phénicien`);
                     outcome: 'success',
                     timeRemainingSeconds: this.timeRemainingSeconds,
                     difficulty: this.difficulty,
-                    helpUsageCount: this.helpUsageCount
+                    helpUsageCount: this.helpUsageCount,
+                    debugUsed: this.debugWasUsed
                 });
                 return;
             }
@@ -2544,7 +2592,7 @@ Moloch le Phénicien`);
                 if (this.phase2OracleVisionSolved || isAnimating) return;
 
                 const tile = tilesById[id];
-                if (!areNeighbors(tile.cellIndex, emptyIndex)) return;
+                if (!this.debugHotspots && !areNeighbors(tile.cellIndex, emptyIndex)) return;
 
                 const from = tile.cellIndex;
                 const to = emptyIndex;
@@ -2868,7 +2916,23 @@ Moloch le Phénicien`);
             { q: 'dans Rise, quel objet est recherche dans Kitezh ?', o: ['Source divine', 'Scion', 'Masque de Cthulhu', 'Pierre philosophale', 'Calice rouge'], a: 0 },
             { q: 'dans Shadow, quelle civilisation est centrale ?', o: ['Maya/Inca', 'Grecque', 'Norse', 'Egyptienne', 'Babylonienne'], a: 0 },
             { q: 'quel est le manoir traditionnel de Lara ?', o: ['Croft Manor', 'Raven Hall', 'Ashford Keep', 'Drake House', 'Winter Lodge'], a: 0 },
-            { q: 'quel personnage est un ami recurrent de Lara (trilogie reboot) ?', o: ['Jonah', 'Winston', 'Larson', 'Pierre', 'Werner'], a: 0 }
+            { q: 'quel personnage est un ami recurrent de Lara (trilogie reboot) ?', o: ['Jonah', 'Winston', 'Larson', 'Pierre', 'Werner'], a: 0 },
+            { q: 'dans TR Anniversary, quel est le nom du niveau ou Lara rencontre le T-Rex ?', o: ['La vallee perdue', 'La folie Saint-Francois', 'Le palais de Midas', 'Le Colisee', 'Le sanctuaire du Scion'], a: 0 },
+            { q: 'dans TR Anniversary, que se passe-t-il si Lara tombe sur la main de la statue de Midas ?', o: ['Elle meurt en se transformant en or', 'Elle meurt decapitee', 'Elle meurt ecrasee par la statue', 'Elle meurt en explosant', 'C\'est un secret du niveau'], a: 0 },
+            { q: 'combien y a-t-il de boss dans TR Anniversary (barre de vie + barre de ferocite) ?', o: ['4', '3', '5', '6', '7'], a: 0 },
+            { q: 'TR Anniversary est une reprise de...', o: ['TR 1', 'TR 2', 'TR 3', 'TR 4', 'TR 5'], a: 0 },
+            { q: 'quels sont les TR ou il faut des diamants pour sauvegarder ?', o: ['TR 1 et TR 3', 'TR 2 et TR 3', 'TR 1 et TR 4', 'TR 2 et TR 3', 'TR 1, TR 2 et TR 3'], a: 0 },
+            { q: 'quel est le nom du niveau et du TR ou Lara doit lancer une fusee spatiale ?', o: ['La Zone 51 dans TR 3', 'Le quartier de haute securite dans TR 2', 'Le quartier de haute securite dans TR 3', 'La Zone 51 dans TR 2', 'Aldwych dans TR 3'], a: 0 },
+            { q: 'pour sa lingerie personnelle, Lara chausse du...', o: ['Bonnet D', 'Bonnet A', 'Bonnet C', 'Bonnet E', 'Bonnet F'], a: 0 },
+            { q: 'Lara est nee le...', o: ['Le jour de la Saint-Valentin', 'Le jour de la fete du travail', 'Le jour de l\'Assomption', 'Le jour de Noel', 'Le 29 janvier'], a: 0 },
+            { q: 'Lara est incarnee au cinema par...', o: ['La femme de Brad Pitt', 'La femme de Tom Cruise', 'La femme de Richard Gere', 'La femme de Mel Gibson', 'La femme de Fabien'], a: 0 },
+            { q: 'comment se nomme le second TR adapte au cinema ?', o: ['Le berceau de la vie', 'Le tombeau de la vie', 'Le receptacle de vie', 'Le calice de la vie', 'Le joyau de la vie'], a: 0 },
+            { q: 'quel est le bon ordre de sortie de ces TR ?', o: ['La revelation finale, sur les traces de Lara Croft, L\'ange des tenebres, TR Legend', 'Sur les traces de Lara Croft, La revelation finale, L\'ange des tenebres, TR Legend', 'La revelation finale, L\'ange des tenebres, sur les traces de Lara Croft, TR Legend', 'La revelation finale, sur les traces de Lara Croft, TR Legend, L\'ange des tenebres', 'TR Legend, La revelation finale, L\'ange des tenebres, sur les traces de Lara Croft'], a: 0 },
+            { q: 'quel animal n\'apparait pas dans TR Anniversary ?', o: ['L\'aigle', 'Le rat', 'Le lion', 'La chauve-souris', 'Le gorille'], a: 0 },
+            { q: 'quelle est la couleur principale du monstre mutant The Boaz lorsque Kurtis l\'affronte dans TR6 ?', o: ['Vert', 'Bleu', 'Blanc', 'Rouge', 'Noir'], a: 0 },
+            { q: 'par quoi sont symbolises les secrets dans TR Sur les traces de Lara Croft ?', o: ['Des roses jaunes', 'Des petits dragons', 'Des munitions', 'Des trousses de soins', 'Un bleu'], a: 0 },
+            { q: 'comment Lara tue-t-elle Mademoiselle Leigh, responsable de produits cosmetiques dans TR3 ?', o: ['En l\'electrifiant', 'En la noyant', 'En la poussant dans le vide', 'Avec les poignards du Lux Veritatis', 'Par un etranglement de jujitsu'], a: 0 },
+            { q: 'quel mode de transport original Lara utilise-t-elle dans TR3 ?', o: ['Kayak', 'Velo', 'Tank', 'Metro', 'Ornithoptere'], a: 0 }
         ];
 
         return facts.map(f => ({ q: f.q, o: [...f.o], a: f.a }));
@@ -3736,7 +3800,7 @@ Moloch le Phénicien`);
             if (this.puzzlesSolved.nord) return 'Le calcul des reliques est déjà validé.';
             if (this.difficulty === DIFFICULTY.HARD)
             {
-                return 'En difficile, fais des suppositions guidées avec les symboles plus grand que / plus petit que. Les chiffres vont de 0 à 8. Tu as déjà compris que Djed vaut 0, et Lotus vaut 1.';
+                return 'Tu as surrement déjà compris que Djed vaut 0, Je te donnes Lotus qui vaut 1. Pour le reste fais des suppositions avec les symboles plus grand que / plus petit que et teste les equations';
             }
             return 'Pose d\'abord les valeurs évidentes, puis vérifie chaque ligne et colonne pour éliminer les incohérences.';
         }
@@ -3852,13 +3916,13 @@ Moloch le Phénicien`);
 
         if (showOracleImage)
         {
-            const oracleTitle = this.add.text(w / 2, h / 2 + 52, 'Aperçu de la vision finale', {
+            const oracleTitle = this.add.text(w / 2, h / 2 + 34, 'Aperçu de la vision finale', {
                 fontFamily: 'Georgia',
                 fontSize: 18,
                 color: '#d9c49a'
             }).setOrigin(0.5).setDepth(222).setScrollFactor(0);
 
-            const image = this.add.image(w / 2, h / 2 + 164, 'oracle-vision')
+            const image = this.add.image(w / 2, h / 2 + 142, 'oracle-vision')
                 .setDisplaySize(260, 196)
                 .setDepth(222)
                 .setScrollFactor(0);
@@ -3882,9 +3946,6 @@ Moloch le Phénicien`);
 
         veil.once('pointerdown', close);
         panel.once('pointerdown', close);
-        this.time.delayedCall(9000, () => {
-            if (this.helpOverlayNodes.length > 0) close();
-        });
     }
 
     updateMessage (text)

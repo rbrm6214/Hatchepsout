@@ -236,8 +236,12 @@ export class MainMenu extends Phaser.Scene
             { key: 'bonus-scarabees-party', title: 'Scarabées Party', fileName: 'scarabéesParty.jpeg' },
             { key: 'bonus-vero-croft', title: 'Vero Croft', fileName: 'VeroCroft.jpeg' },
             { key: 'bonus-puzzle-oracle', title: 'Puzzle Oracle', fileName: 'puzzleOracle.png' },
-            { key: 'bonus-bd-intro-page-1', title: 'BD Intro - Page 1', fileName: 'BD_intro_page1.png' },
-            { key: 'bonus-bd-intro-page-2', title: 'BD Intro - Page 2', fileName: 'BD_intro_page2.png' },
+            { key: 'bonus-bd-intro-page-1a', title: 'BD Intro - Page 1A', fileName: 'BD_intro_1a.png' },
+            { key: 'bonus-bd-intro-page-1b', title: 'BD Intro - Page 1B', fileName: 'BD_intro_1b.png' },
+            { key: 'bonus-bd-intro-page-2a', title: 'BD Intro - Page 2A', fileName: 'BD_intro_2a.png' },
+            { key: 'bonus-bd-intro-page-2b', title: 'BD Intro - Page 2B', fileName: 'BD_intro_2b.png' },
+            { key: 'bonus-bd-intro-full-page-1', title: 'BD Intro - Full Page 1', fileName: 'BD_intro_full_page1.png' },
+            { key: 'bonus-bd-intro-full-page-2', title: 'BD Intro - Full Page 2', fileName: 'BD_intro_full_page2.png' },
             { key: 'bonus-surprise-comics-v1', title: 'Surprise Comics v1', fileName: 'Surprise_comics_version_1.png' },
             { key: 'bonus-surprise-realiste-v1', title: 'Surprise Réaliste v1', fileName: 'Surprise_realiste_version_1.png' }
         ].filter(item => this.textures.exists(item.key));
@@ -316,6 +320,7 @@ export class MainMenu extends Phaser.Scene
             const src = tex?.getSourceImage?.();
             const srcW = src?.width ?? 1;
             const srcH = src?.height ?? 1;
+            slideImage.setCrop();
             const maxW = width - 250;
             const maxH = height - 270;
             const scale = Math.min(maxW / srcW, maxH / srcH);
@@ -508,12 +513,69 @@ export class MainMenu extends Phaser.Scene
         ];
 
         const nodes = [];
+        const developerHintNodes = [];
         const addNode = (obj) => {
             nodes.push(obj);
             return obj;
         };
 
+        const closeDeveloperHintWindow = () => {
+            developerHintNodes.forEach(n => n.destroy());
+            developerHintNodes.length = 0;
+        };
+
+        const openDeveloperHintWindow = (message) => {
+            closeDeveloperHintWindow();
+
+            const addHintNode = (obj) => {
+                developerHintNodes.push(obj);
+                return obj;
+            };
+
+            const close = () => closeDeveloperHintWindow();
+
+            addHintNode(this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.35)
+                .setDepth(56)
+                .setInteractive({ useHandCursor: true }));
+
+            addHintNode(this.add.rectangle(width / 2, height / 2, 840, 320, 0x26190f, 0.72)
+                .setStrokeStyle(2, 0xd7b574)
+                .setDepth(57)
+                .setInteractive({ useHandCursor: true }));
+
+            addHintNode(this.add.text(width / 2, height / 2 - 118, 'Message du développeur', {
+                fontFamily: 'Georgia',
+                fontSize: 34,
+                color: '#f3d8a0',
+                align: 'center'
+            }).setOrigin(0.5).setDepth(58));
+
+            addHintNode(this.add.text(width / 2, height / 2 + 2, message, {
+                fontFamily: 'Georgia',
+                fontSize: 22,
+                color: '#f5e4be',
+                align: 'center',
+                wordWrap: { width: 760 },
+                lineSpacing: 4
+            }).setOrigin(0.5).setDepth(58));
+
+            const closeBg = addHintNode(this.add.rectangle(width / 2, height / 2 + 118, 220, 50, 0x2f2116, 0.88)
+                .setStrokeStyle(2, 0xd7b574)
+                .setDepth(58)
+                .setInteractive({ useHandCursor: true }));
+            addHintNode(this.add.text(width / 2, height / 2 + 118, 'Fermer', {
+                fontFamily: 'Georgia',
+                fontSize: 28,
+                color: '#f5e4be'
+            }).setOrigin(0.5).setDepth(59));
+
+            developerHintNodes[0].once('pointerdown', close);
+            developerHintNodes[1].once('pointerdown', close);
+            closeBg.once('pointerdown', close);
+        };
+
         const closeWindow = () => {
+            closeDeveloperHintWindow();
             this.closeChoiceWindow();
             nodes.forEach(n => n.destroy());
             this.passwordWindowNodes = [];
@@ -613,6 +675,12 @@ export class MainMenu extends Phaser.Scene
                 this.bonusUnlocked = true;
                 this.showBonusButton();
                 statusText.setColor('#d9f0a8').setText('Code valide: Bonus débloqué !');
+                return;
+            }
+            if (codeValue === 1985)
+            {
+                statusText.setColor('#d9f0a8').setText('Code spécial validé.');
+                openDeveloperHintWindow('Bravo pour cette idée, voici pour toi un petit truc du développeur, la touche D du clavier active le mode DEBUG et permet de résoudre plus facilement certaines épreuves (par contre son utilisation te retire ton score à la fin)');
                 return;
             }
             statusText.setColor('#f0ad96').setText('Code invalide.');

@@ -8,6 +8,7 @@ export class GameOver extends Scene
     timeRemainingSeconds;
     difficulty;
     helpUsageCount;
+    debugUsed;
 
     constructor ()
     {
@@ -16,6 +17,7 @@ export class GameOver extends Scene
         this.timeRemainingSeconds = 0;
         this.difficulty = 2;
         this.helpUsageCount = 0;
+        this.debugUsed = false;
     }
 
     init (data)
@@ -24,6 +26,7 @@ export class GameOver extends Scene
         this.timeRemainingSeconds = data?.timeRemainingSeconds ?? 0;
         this.difficulty = Number(data?.difficulty ?? 2);
         this.helpUsageCount = Number(data?.helpUsageCount ?? 0);
+        this.debugUsed = !!data?.debugUsed;
     }
 
     formatScoreTime (seconds)
@@ -54,12 +57,15 @@ export class GameOver extends Scene
         }
         const panelColor = isCollapse ? 0x44221a : 0x2f3d1f;
         const panelStroke = isCollapse ? 0xf1a974 : 0xc7d489;
+        const scoreLine = this.debugUsed
+            ? 'DEBUG activé'
+            : 'Score: ' + this.computeScore();
         const title = isCollapse
             ? 'Le temple s\'effondre !'
             : 'Bravo Véronique, tu es sortie du tombeau, mais nous ne savons pas encore où tu vas arriver...';
         const description = isCollapse
             ? 'Le chrono a atteint 0:00.\nUn éboulement du temple bloque toute issue.'
-            : 'Les sceaux d\'Hatchepsout sont brisés\nCette victoire t\'a débloquée une section Bonus (pour la retrouver, utilises ton année de naissance)\nScore: ' + this.computeScore() + '\nBonne Fête Maman, prend vites en photo cet écran et envoie la moi ^^';
+            : 'Les sceaux d\'Hatchepsout sont brisés\nCette victoire t\'a débloquée une section Bonus (pour la retrouver, utilises ton année de naissance)\n' + scoreLine + '\nBonne Fête Maman, prend vites en photo cet écran et envoie la moi ^^';
 
         this.cameras.main.setBackgroundColor('#1a2310');
 

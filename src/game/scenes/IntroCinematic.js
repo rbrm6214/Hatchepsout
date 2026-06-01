@@ -47,7 +47,7 @@ export class IntroCinematic extends Phaser.Scene
         const lines = [
             'Egypte, 31 mai 2026. Dans le sanctuaire secret de Deir el-Bahari...',
             'Après une vie de famille tout ce qu\'il y a de plus normal et bien remplie,',
-            'Veronique, jeune diplômé en archéologie,',
+            'Veronique, jeune diplômée en archéologie,',
             'rêve de suivre les traces de son idôle : "Lara Croft"! et commence son exploration.',
             'Un mecanisme antique se declenche, (en fait c\'est simplement un piege qu\'elle a enclenchée car innexpérimentée ^^.)', 
             'La chambre funeraire se referme alors derriere elle.',

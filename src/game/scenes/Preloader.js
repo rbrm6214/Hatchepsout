@@ -18,8 +18,12 @@ import horusImg from '../../Murs/horus.png';
 import bonusScarabesPartyImg from '../../bonus/scarabéesParty.jpeg';
 import bonusVeroCroftImg from '../../bonus/VeroCroft.jpeg';
 import bonusPuzzleOracleImg from '../../bonus/puzzleOracle.png';
-import bonusBdIntroPage1Img from '../../bonus/BD_intro_page1.png';
-import bonusBdIntroPage2Img from '../../bonus/BD_intro_page2.png';
+import bonusBdIntroPage1aImg from '../../bonus/BD_intro_1a.png';
+import bonusBdIntroPage1bImg from '../../bonus/BD_intro_1b.png';
+import bonusBdIntroPage2aImg from '../../bonus/BD_intro_2a.png';
+import bonusBdIntroPage2bImg from '../../bonus/BD_intro_2b.png';
+import bonusBdIntroFullPage1Img from '../../bonus/BD_intro_full_page1.png';
+import bonusBdIntroFullPage2Img from '../../bonus/BD_intro_full_page2.png';
 import bonusSurpriseComicsV1Img from '../../bonus/Surprise_comics_version_1.png';
 import bonusSurpriseRealisteV1Img from '../../bonus/Surprise_realiste_version_1.png';
 
@@ -74,9 +78,13 @@ export class Preloader extends Scene
         this.load.image('oracle-horus', horusImg);
         this.load.image('bonus-scarabees-party', bonusScarabesPartyImg);
         this.load.image('bonus-vero-croft', bonusVeroCroftImg);
-        this.load.image('bonus-puzzle-oracle', bonusPuzzleOracleImg);
-        this.load.image('bonus-bd-intro-page-1', bonusBdIntroPage1Img);
-        this.load.image('bonus-bd-intro-page-2', bonusBdIntroPage2Img);
+        this.load.image('bonus-puzzle-horus', bonusPuzzleOracleImg);
+        this.load.image('bonus-bd-intro-page-1a', bonusBdIntroPage1aImg);
+        this.load.image('bonus-bd-intro-page-1b', bonusBdIntroPage1bImg);
+        this.load.image('bonus-bd-intro-page-2a', bonusBdIntroPage2aImg);
+        this.load.image('bonus-bd-intro-page-2b', bonusBdIntroPage2bImg);
+        this.load.image('bonus-bd-intro-full-page-1', bonusBdIntroFullPage1Img);
+        this.load.image('bonus-bd-intro-full-page-2', bonusBdIntroFullPage2Img);
         this.load.image('bonus-surprise-comics-v1', bonusSurpriseComicsV1Img);
         this.load.image('bonus-surprise-realiste-v1', bonusSurpriseRealisteV1Img);
     }
